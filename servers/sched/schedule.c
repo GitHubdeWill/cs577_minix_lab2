@@ -99,13 +99,30 @@ int do_noquantum(message *m_ptr)
 	}
 
 	rmp = &schedproc[proc_nr_n];
+	// original
+	// if (rmp->priority < MIN_USER_Q) {
+	// 	rmp->priority += 1; /* lower priority */
+	// }
+
+	// if ((rv = schedule_process_local(rmp)) != OK) {
+	// 	return rv;
+	// }
+
+	// 577 edit start
+	printf("Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 	if (rmp->priority < MIN_USER_Q) {
-		rmp->priority += 1; /* lower priority */
+		rmp->priority += 0; /* lower priority 577 edit*/
 	}
 
-	if ((rv = schedule_process_local(rmp)) != OK) {
+	if((rv = schedule_process_local(rmp)) != OK) {
 		return rv;
 	}
+	// reset process queue
+	rmp->priority= MIN_USER_Q;
+	schedule_process_local(rmp);
+
+	fcfs_algorithm();
+	// 577 edit done
 	return OK;
 }
 
@@ -133,6 +150,9 @@ int do_stop_scheduling(message *m_ptr)
 #endif
 	rmp->flags = 0; /*&= ~IN_USE;*/
 
+	//577 edit start
+	fcfs_algorithm();
+	//577 edit end
 	return OK;
 }
 
@@ -166,6 +186,9 @@ int do_start_scheduling(message *m_ptr)
 	if (rmp->max_priority >= NR_SCHED_QUEUES) {
 		return EINVAL;
 	}
+	// 577 edit start
+	rmp->id = ++idcounter;
+	// 577 edit end
 
 	/* Inherit current priority and time slice from parent. Since there
 	 * is currently only one scheduler scheduling the whole system, this
@@ -206,7 +229,9 @@ int do_start_scheduling(message *m_ptr)
 				&parent_nr_n)) != OK)
 			return rv;
 
-		rmp->priority = schedproc[parent_nr_n].priority;
+		// 577 edit start
+		rmp->priority = USER_Q; //schedproc[parent_nr_n].priority;
+		// 577 edit end
 		rmp->time_slice = schedproc[parent_nr_n].time_slice;
 		break;
 		
@@ -353,14 +378,25 @@ static void balance_queues(struct timer *tp)
 	struct schedproc *rmp;
 	int proc_nr;
 
+	// for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+	// 	if (rmp->flags & IN_USE) {
+	// 		if (rmp->priority > rmp->max_priority) {
+	// 			rmp->priority -= 1; /* increase priority */
+	// 			schedule_process_local(rmp);
+	// 		}
+	// 	}
+	// }
+
+	// 577 edit start
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if (rmp->flags & IN_USE) {
 			if (rmp->priority > rmp->max_priority) {
-				rmp->priority -= 1; /* increase priority */
+				rmp->priority -= 0; /* no tamper priority */
 				schedule_process_local(rmp);
 			}
 		}
 	}
+	// 577 edit end
 
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
 }
