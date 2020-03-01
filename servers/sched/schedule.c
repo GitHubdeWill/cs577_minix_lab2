@@ -83,6 +83,33 @@ static void pick_cpu(struct schedproc * proc)
 #endif
 }
 
+
+/*===========================================================================*
+*				577 Edit FCFS policy				     *
+*===========================================================================*/
+unsigned idcounter = 0;
+int fcfs_algorithm(){
+    struct schedproc *rmp;
+    int proc_nr;
+    unsigned next_id = 1000000;
+
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->priority == MIN_USER_Q && rmp->id<next_id) {
+            next_id = rmp->id;
+        }
+    }
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->id==next_id) {
+            rmp->priority = MAX_USER_Q;
+            schedule_process_local(rmp);
+            break;
+        }
+    }
+    return OK;
+}
+
 /*===========================================================================*
  *				do_noquantum				     *
  *===========================================================================*/
@@ -399,30 +426,4 @@ static void balance_queues(struct timer *tp)
 	// 577 edit end
 
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
-}
-
-/*===========================================================================*
-*				577 Edit FCFS policy				     *
-*===========================================================================*/
-unsigned idcounter = 0;
-int fcfs_algorithm(){
-    struct schedproc *rmp;
-    int proc_nr;
-    unsigned next_id = 1000000;
-
-    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-        if ((rmp->flags & IN_USE)
-                && rmp->priority == MIN_USER_Q && rmp->id<next_id) {
-            next_id = rmp->id;
-        }
-    }
-    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-        if ((rmp->flags & IN_USE)
-                && rmp->id==next_id) {
-            rmp->priority = MAX_USER_Q;
-            schedule_process_local(rmp);
-            break;
-        }
-    }
-    return OK;
 }
