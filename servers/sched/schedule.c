@@ -14,6 +14,7 @@
 #include <machine/archtypes.h>
 #include "kernel/proc.h" /* for queue constants */
 #include <stdlib.h>  // For Random function
+#include <stdio.h>
 
 static timer_t sched_timer;
 static unsigned balance_timeout;
