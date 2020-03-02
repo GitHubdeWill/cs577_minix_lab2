@@ -13,6 +13,7 @@
 #include <minix/com.h>
 #include <machine/archtypes.h>
 #include "kernel/proc.h" /* for queue constants */
+#include <stdlib.h>  // For Random function
 
 static timer_t sched_timer;
 static unsigned balance_timeout;
@@ -83,22 +84,70 @@ static void pick_cpu(struct schedproc * proc)
 #endif
 }
 
+/*===========================================================================*
+*				577 Edit id counter for processes				     *
+*===========================================================================*/
+unsigned idcounter = 0;  // id for processes to indicate who came in first
+int seed = 1213971;  // seed used by random
 
 /*===========================================================================*
-*				577 Edit FCFS policy				     *
+*				577 Edit FCFS policy (unused)				     *
 *===========================================================================*/
-unsigned idcounter = 0;
 int fcfs_algorithm(){
+    /**
+     * @brief  Move the least recent process to lower priority
+     * @note   
+     * @retval Status of the operation
+     */
     struct schedproc *rmp;
     int proc_nr;
     unsigned next_id = 1000000;
 
+	// Loop through all process in process array and get the lowest id
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
                 && rmp->priority == MIN_USER_Q && rmp->id<next_id) {
             next_id = rmp->id;
         }
     }
+
+	// put the lowest id to MAX Q
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->id==next_id) {
+            rmp->priority = MAX_USER_Q;
+            schedule_process_local(rmp);
+            break;
+        }
+    }
+    return OK;
+}
+
+/*===========================================================================*
+*				577 Edit random policy				     *
+*===========================================================================*/
+int random_algorithm(){
+    /**
+     * @brief  Move a random process to lower priority
+     * @note   
+     * @retval Status of operation
+     */
+	srandom(seed);
+    struct schedproc *rmp;
+    int proc_nr;
+    int all_procs[NR_PROCS];  // Stores all processes for later random
+	int array_end = 0;  // The end index of array
+
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->priority == MIN_USER_Q) {
+            all_procs[array_end++] = rmp->id;
+        }
+    }
+
+	int next_id = all_procs[random()%array_end];
+
+	// put the random id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
                 && rmp->id==next_id) {
@@ -137,7 +186,7 @@ int do_noquantum(message *m_ptr)
 
 	// 577 edit start
 	printf("Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
-	if (rmp->priority < MIN_USER_Q) {
+	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
 		rmp->priority += 0; /* lower priority 577 edit*/
 	}
 
@@ -148,7 +197,8 @@ int do_noquantum(message *m_ptr)
 	rmp->priority= MIN_USER_Q;
 	schedule_process_local(rmp);
 
-	fcfs_algorithm();
+	// fcfs_algorithm();
+	random_algorithm();
 	// 577 edit done
 	return OK;
 }
@@ -178,7 +228,8 @@ int do_stop_scheduling(message *m_ptr)
 	rmp->flags = 0; /*&= ~IN_USE;*/
 
 	//577 edit start
-	fcfs_algorithm();
+	// fcfs_algorithm();
+	random_algorithm();
 	//577 edit end
 	return OK;
 }
