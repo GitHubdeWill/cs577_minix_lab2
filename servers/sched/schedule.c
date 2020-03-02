@@ -132,7 +132,7 @@ int random_algorithm(){
      * @note   
      * @retval Status of operation
      */
-	srandom(seed);
+	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
     int all_procs[NR_PROCS];  // Stores all processes for later random
@@ -146,6 +146,7 @@ int random_algorithm(){
     }
 
 	int next_id = all_procs[random()%array_end];
+	printf("sched.c random_algorithm: selecting process %d to run.\n", next_id);
 
 	// put the random id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
@@ -185,7 +186,12 @@ int do_noquantum(message *m_ptr)
 	// }
 
 	// 577 edit start
-	printf("Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
+	if (is_system_proc(rmp)) {
+		printf("do_noquantum: system process");
+		return OK;  // Skip system processes
+	}
+
+	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
 		rmp->priority += 0; /* lower priority 577 edit*/
 	}
@@ -266,6 +272,7 @@ int do_start_scheduling(message *m_ptr)
 	}
 	// 577 edit start
 	rmp->id = ++idcounter;
+	printf("do_start_scheduling: starting scheduling for process %d.\n", rmp->id);
 	// 577 edit end
 
 	/* Inherit current priority and time slice from parent. Since there
