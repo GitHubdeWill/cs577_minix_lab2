@@ -145,7 +145,8 @@ int random_algorithm(){
         }
     }
 
-	int next_id = all_procs[random()%array_end];
+	// int next_id = all_procs[random()%array_end];
+	int next_id = all_procs[0];
 	printf("sched.c random_algorithm: selecting process %d to run.\n", next_id);
 
 	// put the random id to MAX Q
@@ -166,6 +167,7 @@ int random_algorithm(){
 
 int do_noquantum(message *m_ptr)
 {
+	printf("do_noquantum: starting\n");
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
 
@@ -188,7 +190,7 @@ int do_noquantum(message *m_ptr)
 	// 577 edit start
 	if (is_system_proc(rmp)) {
 		printf("do_noquantum: system process");
-		return OK;  // Skip system processes
+		// return OK;  // Skip system processes
 	}
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
@@ -214,6 +216,7 @@ int do_noquantum(message *m_ptr)
  *===========================================================================*/
 int do_stop_scheduling(message *m_ptr)
 {
+	printf("do_stop_scheduling: starting\n");
 	register struct schedproc *rmp;
 	int proc_nr_n;
 
@@ -245,6 +248,7 @@ int do_stop_scheduling(message *m_ptr)
  *===========================================================================*/
 int do_start_scheduling(message *m_ptr)
 {
+	printf("do_start_scheduling: starting\n");
 	register struct schedproc *rmp;
 	int rv, proc_nr_n, parent_nr_n;
 	
@@ -365,6 +369,7 @@ int do_start_scheduling(message *m_ptr)
  *===========================================================================*/
 int do_nice(message *m_ptr)
 {
+	printf("do_nice: starting\n");
 	struct schedproc *rmp;
 	int rv;
 	int proc_nr_n;
@@ -408,6 +413,7 @@ int do_nice(message *m_ptr)
  *===========================================================================*/
 static int schedule_process(struct schedproc * rmp, unsigned flags)
 {
+	prinf("schedule_process: scheduling %d\n", rmp->id);
 	int err;
 	int new_prio, new_quantum, new_cpu;
 
@@ -473,14 +479,14 @@ static void balance_queues(struct timer *tp)
 	// }
 
 	// 577 edit start
-	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-		if (rmp->flags & IN_USE) {
-			if (rmp->priority > rmp->max_priority) {
-				rmp->priority -= 0; /* no tamper priority */
-				schedule_process_local(rmp);
-			}
-		}
-	}
+	// for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+	// 	if (rmp->flags & IN_USE) {
+	// 		if (rmp->priority > rmp->max_priority) {
+	// 			rmp->priority -= 0; /* no tamper priority */
+	// 			schedule_process_local(rmp);
+	// 		}
+	// 	}
+	// }
 	// 577 edit end
 
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
