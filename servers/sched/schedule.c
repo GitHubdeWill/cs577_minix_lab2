@@ -89,7 +89,17 @@ static void pick_cpu(struct schedproc * proc)
 *				577 Edit id counter for processes				     *
 *===========================================================================*/
 unsigned idcounter = 0;  // id for processes to indicate who came in first
-int seed = 1213971;  // seed used by random
+static unsigned int next = 1;
+int rando_r(unsigned int *seed){ 
+    *seed = *seed * 131071 + 12345;
+    return (*seed % ((unsigned int)255 + 1));
+} 
+int rando(void){
+    return (rando_r(&next));
+}
+void srando(unsigned int seed) {
+    next = seed%256;
+}
 
 /*===========================================================================*
 *				577 Edit FCFS policy (unused)				     *
@@ -127,6 +137,7 @@ int fcfs_algorithm(){
 /*===========================================================================*
 *				577 Edit random policy				     *
 *===========================================================================*/
+
 int random_algorithm(){
     /**
      * @brief  Move a random process to lower priority
@@ -147,8 +158,18 @@ int random_algorithm(){
     }
 
 	// int next_id = all_procs[random()%array_end];
-	int next_id = all_procs[0];
-	printf("sched.c random_algorithm: selecting process %d to run.\n", next_id);
+	// if (next == 1) {
+	// 	int seed = time(NULL);
+	// 	printf("random_algorithm: seeding with %d.\n", seed);
+	// 	srando(seed);
+	// }
+
+	int rando_nr = rando();
+	int proc_idx = rando_nr%array_end;
+	printf("random_algorithm: By %d, The chosen proc idx is no. %d out of %d processes.\n", rando_nr, proc_idx, array_end);
+	
+	int next_id = all_procs[array_end-1];
+	printf("random_algorithm: selecting process %d to run.\n", next_id);
 
 	// put the random id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
@@ -190,7 +211,7 @@ int do_noquantum(message *m_ptr)
 
 	// 577 edit start
 	if (is_system_proc(rmp)) {
-		printf("do_noquantum: system process");
+		printf("do_noquantum: system process, continue.\n");
 		// return OK;  // Skip system processes
 	}
 
@@ -414,7 +435,7 @@ int do_nice(message *m_ptr)
  *===========================================================================*/
 static int schedule_process(struct schedproc * rmp, unsigned flags)
 {
-	prinf("schedule_process: scheduling %d\n", rmp->id);
+	printf("schedule_process: scheduling %d\n", rmp->id);
 	int err;
 	int new_prio, new_quantum, new_cpu;
 
