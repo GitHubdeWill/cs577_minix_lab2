@@ -161,7 +161,7 @@ int random_algorithm(){
 
 	// If no process
 	if (array_end == 0) {
-		printf("random_algorithm: no process in use.")
+		printf("random_algorithm: no process in use.");
 	}
 
 	// int next_id = all_procs[random()%array_end];
@@ -227,7 +227,7 @@ int lottery_algorithm(){
 	// }
 
 	int rando_nr = rando();
-	int ticket_c = rando_nr%total;
+	int ticket_c = rando_nr%total_tickets;
 	printf("lottery_algorithm: By %d,  %d / %d ticket is selected.\n", rando_nr, ticket_c, total_tickets);
 	
 	int next_id = -1;
