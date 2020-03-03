@@ -61,16 +61,21 @@ int main(void)
 
 		switch(call_nr) {
 		case SCHEDULING_INHERIT:
+			printf("sched main: SCHEDULING_INHERIT\n");
 		case SCHEDULING_START:
+			printf("sched main: SCHEDULING_START\n");
 			result = do_start_scheduling(&m_in);
 			break;
 		case SCHEDULING_STOP:
+			printf("sched main: SCHEDULING_STOP\n");
 			result = do_stop_scheduling(&m_in);
 			break;
 		case SCHEDULING_SET_NICE:
+			printf("sched main: SCHEDULING_NICE\n");
 			result = do_nice(&m_in);
 			break;
 		case SCHEDULING_NO_QUANTUM:
+			printf("sched main: SCHEDULING_NOQ\n");
 			/* This message was sent from the kernel, don't reply */
 			if (IPC_STATUS_FLAGS_TEST(ipc_status,
 				IPC_FLG_MSG_FROM_KERNEL)) {

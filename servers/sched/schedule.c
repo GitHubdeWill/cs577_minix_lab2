@@ -144,6 +144,7 @@ int random_algorithm(){
      * @note   
      * @retval Status of operation
      */
+	printf("random_algorithm: starting\n");
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
@@ -157,6 +158,11 @@ int random_algorithm(){
             all_procs[array_end++] = rmp->id;
         }
     }
+
+	// If no process
+	if (array_end == 0) {
+		printf("random_algorithm: no process in use.")
+	}
 
 	// int next_id = all_procs[random()%array_end];
 	// if (next == 1) {
@@ -194,6 +200,7 @@ int lottery_algorithm(){
      * @note   
      * @retval Status of operation
      */
+	printf("lottery_algorithm: starting.\n");
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
