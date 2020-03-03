@@ -32,6 +32,7 @@ EXTERN struct schedproc {
 	unsigned cpu;		/* what CPU is the process running on */
 	// 577 edit start
 	unsigned id;       //Id Counter
+	unsigned tickets;  // Number of tickets for lottery
 	// 577 edit end
 	bitchunk_t cpu_mask[BITMAP_CHUNKS(CONFIG_MAX_CPUS)]; /* what CPUs is hte
 								process allowed

@@ -92,7 +92,7 @@ unsigned idcounter = 0;  // id for processes to indicate who came in first
 static unsigned int next = 1;
 int rando_r(unsigned int *seed){ 
     *seed = *seed * 131071 + 12345;
-    return (*seed % ((unsigned int)255 + 1));
+    return (*seed % ((unsigned int)RANDOM_MAX + 1));
 } 
 int rando(void){
     return (rando_r(&next));
@@ -147,9 +147,10 @@ int random_algorithm(){
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
-    int all_procs[NR_PROCS];  // Stores all processes for later random
+    int all_procs[NR_PROCS];  // Stores all process ids for later random
 	int array_end = 0;  // The end index of array
 
+	// Add all process ids to array
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
                 && rmp->priority == MIN_USER_Q) {
@@ -168,10 +169,81 @@ int random_algorithm(){
 	int proc_idx = rando_nr%array_end;
 	printf("random_algorithm: By %d, The chosen proc idx is no. %d out of %d processes.\n", rando_nr, proc_idx, array_end);
 	
-	int next_id = all_procs[array_end-1];
-	printf("random_algorithm: selecting process %d to run.\n", next_id);
+	int next_id = all_procs[proc_idx];
+	printf("random_algorithm: selecting process %d to Prio 14.\n", next_id);
 
 	// put the random id to MAX Q
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->id==next_id) {
+            rmp->priority = MAX_USER_Q;
+            schedule_process_local(rmp);
+            break;
+        }
+    }
+    return OK;
+}
+
+/*===========================================================================*
+*				577 Edit lottery policy				     *
+*===========================================================================*/
+
+int lottery_algorithm(){
+    /**
+     * @brief  Assign priority based on tickets
+     * @note   
+     * @retval Status of operation
+     */
+	// srandom(seed);
+    struct schedproc *rmp;
+    int proc_nr;
+    int all_procs[NR_PROCS];  // Stores all process id for later random
+	int array_end = 0;  // The end index of array
+	int total_tickets = 0;  // Holds the total amount of tickets of all processes
+
+	// Get total amount of tickets
+    for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->priority == MIN_USER_Q) {
+            total_tickets += rmp->tickets;
+        }
+    }
+
+	if (total_tickets < 1) return OK;  // When there is no ticket
+
+	// int next_id = all_procs[random()%array_end];
+
+	// if (next == 1) {
+	// 	int seed = time(NULL);
+	// 	printf("lottery_algorithm: seeding with %d.\n", seed);
+	// 	srando(seed);
+	// }
+
+	int rando_nr = rando();
+	int ticket_c = rando_nr%total;
+	printf("lottery_algorithm: By %d,  %d / %d ticket is selected.\n", rando_nr, ticket_c, total_tickets);
+	
+	int next_id = -1;
+	// Distribute the tickets
+	for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        if ((rmp->flags & IN_USE)
+                && rmp->priority == MIN_USER_Q) {
+            ticket_c -= rmp->tickets;
+        }
+		if (ticket_c <= 0) {
+			next_id = rmp->id;
+			break;
+		}
+    }
+
+	if (next_id == -1) {
+		printf("lottery_algorithm: No process chosen.\n");
+		return OK;
+	}
+
+	printf("lottery_algorithm: selecting process %d to higher prio.\n", next_id);
+
+	// put the winners id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
                 && rmp->id==next_id) {
@@ -212,12 +284,12 @@ int do_noquantum(message *m_ptr)
 	// 577 edit start
 	if (is_system_proc(rmp)) {
 		printf("do_noquantum: system process, continue.\n");
-		// return OK;  // Skip system processes
+		return OK;  // Skip system processes
 	}
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
-		rmp->priority += 0; /* lower priority 577 edit*/
+		rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
 	}
 
 	if((rv = schedule_process_local(rmp)) != OK) {
@@ -259,6 +331,7 @@ int do_stop_scheduling(message *m_ptr)
 	rmp->flags = 0; /*&= ~IN_USE;*/
 
 	//577 edit start
+	// When a process stopped, we want to schedule another one
 	// fcfs_algorithm();
 	random_algorithm();
 	//577 edit end
@@ -298,6 +371,7 @@ int do_start_scheduling(message *m_ptr)
 	}
 	// 577 edit start
 	rmp->id = ++idcounter;
+	rmp->tickets = 2;  // All process have 2 tickets at start
 	printf("do_start_scheduling: starting scheduling for process %d.\n", rmp->id);
 	// 577 edit end
 
