@@ -292,11 +292,11 @@ int do_noquantum(message *m_ptr)
 	// }
 
 	// 577 edit start
-	// if (is_system_proc(rmp)) {
-	// 	// printf("do_noquantum: system process, continue.\n");
-	// 	schedule_process_local(rmp);  // Continue to run it
-	// 	return OK;  // Skip system processes
-	// }
+	if (is_system_proc(rmp) || rmp->priority < MAX_USER_Q) {
+		// printf("do_noquantum: system process, continue.\n");
+		schedule_process_local(rmp);  // Continue to run it
+		return OK;  // Skip system processes
+	}
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 
