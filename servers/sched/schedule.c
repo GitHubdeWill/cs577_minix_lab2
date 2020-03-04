@@ -89,17 +89,7 @@ static void pick_cpu(struct schedproc * proc)
 *				577 Edit id counter for processes				     *
 *===========================================================================*/
 unsigned idcounter = 0;  // id for processes to indicate who came in first
-static unsigned int next = 1;
-int rando_r(unsigned int *seed){ 
-    *seed = *seed * 131071 + 12345;
-    return (*seed % ((unsigned int)RANDOM_MAX + 1));
-} 
-int rando(void){
-    return (rando_r(&next));
-}
-void srando(unsigned int seed) {
-    next = seed%256;
-}
+
 
 /*===========================================================================*
 *				577 Edit FCFS policy (unused)				     *
@@ -171,25 +161,26 @@ int random_algorithm(){
 	// if (next == 1) {
 	// 	int seed = time(NULL);
 	// 	printf("random_algorithm: seeding with %d.\n", seed);
-	// 	srando(seed);
+	// 	srandom(seed);
 	// }
 
-	// int rando_nr = rando();
-	// int proc_idx = rando_nr%array_end;
-	// printf("random_algorithm: By %d, The chosen proc idx is no. %d out of %d processes.\n", rando_nr, proc_idx, array_end);
-	
-	// int next_id = all_procs[proc_idx];
-	// printf("random_algorithm: selecting process %d to Prio 14.\n", next_id);
+	// printf("random_algorithm: process count: %d\n", process_count);
 
 	int process_to_raise = random() % process_count;
+
+	// printf("random_algorithm: process index to raise: %d\n", process_to_raise);
 	// put the random id to MAX Q
 	int process_idx = 0;
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-        if ((rmp->flags & IN_USE)
-                && process_idx++ ==process_to_raise) {
-            rmp->priority = MAX_USER_Q;
-            schedule_process_local(rmp);
-            break;
+        if ((rmp->flags & IN_USE) && rmp->priority == MIN_USER_Q) {
+			if (process_idx == process_to_raise) {
+				int procid = rmp->id;
+				printf("random_algorithm: raise: %d\n", procid);
+				rmp->priority = MAX_USER_Q;
+				schedule_process_local(rmp);
+				break;
+			}
+			process_idx++;
         }
     }
     return OK;
@@ -224,7 +215,7 @@ int lottery_algorithm(){
 	// if (next == 1) {
 	// 	int seed = time(NULL);
 	// 	printf("lottery_algorithm: seeding with %d.\n", seed);
-	// 	srando(seed);
+	// 	srandom(seed);
 	// }
 
 	int ticket_c = random() % total_tickets;
@@ -268,7 +259,7 @@ int lottery_algorithm(){
 
 int do_noquantum(message *m_ptr)
 {
-	printf("do_noquantum: starting\n");
+	// printf("do_noquantum: starting\n");
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
 
@@ -289,33 +280,39 @@ int do_noquantum(message *m_ptr)
 	// }
 
 	// 577 edit start
-	if (is_system_proc(rmp)) {
-		// printf("do_noquantum: system process, continue.\n");
-		schedule_process_local(rmp);  // Continue to run it
-		return OK;  // Skip system processes
-	}
+	// if (is_system_proc(rmp)) {
+	// 	// printf("do_noquantum: system process, continue.\n");
+	// 	schedule_process_local(rmp);  // Continue to run it
+	// 	return OK;  // Skip system processes
+	// }
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
-	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
-		rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
-		// schedule_process_local(rmp);  // Continue to run it; not continue for lottery
-		// return OK;
-	}
+	// if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
+	// 	printf("do_noquantum: high priority proc, continue");
+	// 	rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
+	// 	schedule_process_local(rmp);  // Continue to run it; not continue for lottery
+	// 	return OK;
+	// }
+	
+	printf("do_noquantum: no other process should run before this process is finished.\n");
+	rmp->priority = MAX_USER_Q;
+	schedule_process_local(rmp);  // Continue to run it
+	///
+		// Premeptive should schedule new
+	///
+	// if((rv = schedule_process_local(rmp)) != OK) {
+	// 	printf("do_noquantum: schedule rmp not OK.\n");
+	// 	return rv;
+	// }
 
-	if((rv = schedule_process_local(rmp)) != OK) {
-		printf("do_noquantum: schedule rmp not OK.\n");
-		return rv;
-	}
+	// // reset process queue
+	// rmp->priority= MIN_USER_Q;
+	// schedule_process_local(rmp);
 
-	printf("do_noquantum: schedule rmp OK.\n");
-	// reset process queue
-	rmp->priority= MIN_USER_Q;
-	schedule_process_local(rmp);
-
-	// fcfs_algorithm();
+	// // fcfs_algorithm();
 	// random_algorithm();
-	lottery_algorithm();
-	// 577 edit done
+	// // lottery_algorithm();
+	// // 577 edit done
 	return OK;
 }
 
@@ -347,8 +344,8 @@ int do_stop_scheduling(message *m_ptr)
 	//577 edit start
 	// When a process stopped, we want to schedule another one
 	// fcfs_algorithm();
-	// random_algorithm();
-	lottery_algorithm();
+	random_algorithm();
+	// lottery_algorithm();
 	//577 edit end
 	return OK;
 }

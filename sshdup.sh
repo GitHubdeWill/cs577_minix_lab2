@@ -1,0 +1,1 @@
+/usr/pkg/etc/rc.d/sshd restart
