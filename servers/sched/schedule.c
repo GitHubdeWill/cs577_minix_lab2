@@ -144,24 +144,26 @@ int random_algorithm(){
      * @note   
      * @retval Status of operation
      */
-	printf("random_algorithm: starting\n");
+	// printf("random_algorithm: starting\n");
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
-    int all_procs[NR_PROCS];  // Stores all process ids for later random
-	int array_end = 0;  // The end index of array
+    // int all_procs[NR_PROCS];  // Stores all process ids for later random
+	// int array_end = 0;  // The end index of array
+	int process_count = 0;
 
 	// Add all process ids to array
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
                 && rmp->priority == MIN_USER_Q) {
-            all_procs[array_end++] = rmp->id;
+            // all_procs[array_end++] = rmp->id;
+			process_count++;
         }
     }
 
 	// If no process
-	if (array_end == 0) {
-		printf("random_algorithm: no process in use.\n");
+	if (process_count == 0) {
+		// printf("random_algorithm: no process in use.\n");
 		return OK;
 	}
 
@@ -172,17 +174,19 @@ int random_algorithm(){
 	// 	srando(seed);
 	// }
 
-	int rando_nr = rando();
-	int proc_idx = rando_nr%array_end;
-	printf("random_algorithm: By %d, The chosen proc idx is no. %d out of %d processes.\n", rando_nr, proc_idx, array_end);
+	// int rando_nr = rando();
+	// int proc_idx = rando_nr%array_end;
+	// printf("random_algorithm: By %d, The chosen proc idx is no. %d out of %d processes.\n", rando_nr, proc_idx, array_end);
 	
-	int next_id = all_procs[proc_idx];
-	printf("random_algorithm: selecting process %d to Prio 14.\n", next_id);
+	// int next_id = all_procs[proc_idx];
+	// printf("random_algorithm: selecting process %d to Prio 14.\n", next_id);
 
+	int process_to_raise = random() % process_count;
 	// put the random id to MAX Q
+	int process_idx = 0;
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
-                && rmp->id==next_id) {
+                && process_idx++ ==process_to_raise) {
             rmp->priority = MAX_USER_Q;
             schedule_process_local(rmp);
             break;
@@ -201,7 +205,7 @@ int lottery_algorithm(){
      * @note   
      * @retval Status of operation
      */
-	printf("lottery_algorithm: starting.\n");
+	// printf("lottery_algorithm: starting.\n");
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
@@ -229,7 +233,7 @@ int lottery_algorithm(){
 
 	int rando_nr = rando();
 	int ticket_c = rando_nr%total_tickets;
-	printf("lottery_algorithm: By %d,  %d / %d ticket is selected.\n", rando_nr, ticket_c, total_tickets);
+	// printf("lottery_algorithm: By %d,  %d / %d ticket is selected.\n", rando_nr, ticket_c, total_tickets);
 	
 	int next_id = -1;
 	// Distribute the tickets
@@ -245,11 +249,11 @@ int lottery_algorithm(){
     }
 
 	if (next_id == -1) {
-		printf("lottery_algorithm: No process chosen.\n");
+		// printf("lottery_algorithm: No process chosen.\n");
 		return OK;
 	}
 
-	printf("lottery_algorithm: selecting process %d to prio 14.\n", next_id);
+	// printf("lottery_algorithm: selecting process %d to prio 14.\n", next_id);
 
 	// put the winners id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
@@ -291,18 +295,24 @@ int do_noquantum(message *m_ptr)
 
 	// 577 edit start
 	if (is_system_proc(rmp)) {
-		printf("do_noquantum: system process, continue.\n");
+		// printf("do_noquantum: system process, continue.\n");
+		schedule_process_local(rmp);  // Continue to run it
 		return OK;  // Skip system processes
 	}
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
 		rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
+		schedule_process_local(rmp);  // Continue to run it
+		return OK;
 	}
 
 	if((rv = schedule_process_local(rmp)) != OK) {
+		printf("do_noquantum: schedule rmp not OK.\n");
 		return rv;
 	}
+
+	printf("do_noquantum: schedule rmp OK.\n");
 	// reset process queue
 	rmp->priority= MIN_USER_Q;
 	schedule_process_local(rmp);
@@ -318,7 +328,7 @@ int do_noquantum(message *m_ptr)
  *===========================================================================*/
 int do_stop_scheduling(message *m_ptr)
 {
-	printf("do_stop_scheduling: starting\n");
+	// printf("do_stop_scheduling: starting\n");
 	register struct schedproc *rmp;
 	int proc_nr_n;
 
@@ -351,7 +361,7 @@ int do_stop_scheduling(message *m_ptr)
  *===========================================================================*/
 int do_start_scheduling(message *m_ptr)
 {
-	printf("do_start_scheduling: starting\n");
+	// printf("do_start_scheduling: starting\n");
 	register struct schedproc *rmp;
 	int rv, proc_nr_n, parent_nr_n;
 	
@@ -473,7 +483,7 @@ int do_start_scheduling(message *m_ptr)
  *===========================================================================*/
 int do_nice(message *m_ptr)
 {
-	printf("do_nice: starting\n");
+	// printf("do_nice: starting\n");
 	struct schedproc *rmp;
 	int rv;
 	int proc_nr_n;
@@ -517,7 +527,7 @@ int do_nice(message *m_ptr)
  *===========================================================================*/
 static int schedule_process(struct schedproc * rmp, unsigned flags)
 {
-	printf("schedule_process: scheduling %d\n", rmp->id);
+	// printf("schedule_process: scheduling %d\n", rmp->id);
 	int err;
 	int new_prio, new_quantum, new_cpu;
 
@@ -570,7 +580,7 @@ void init_scheduling(void)
  */
 static void balance_queues(struct timer *tp)
 {
-	printf("balance_queues: starting\n");
+	// printf("balance_queues: starting\n");
 	struct schedproc *rmp;
 	int proc_nr;
 
