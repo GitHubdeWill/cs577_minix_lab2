@@ -257,7 +257,7 @@ int lottery_algorithm(){
                 && rmp->id==next_id) {
             rmp->priority = MAX_USER_Q;
             schedule_process_local(rmp);
-            break;higher
+            break;
         }
     }
     return OK;
