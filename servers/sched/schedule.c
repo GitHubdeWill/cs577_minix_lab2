@@ -161,7 +161,8 @@ int random_algorithm(){
 
 	// If no process
 	if (array_end == 0) {
-		printf("random_algorithm: no process in use.");
+		printf("random_algorithm: no process in use.\n");
+		return OK;
 	}
 
 	// int next_id = all_procs[random()%array_end];
@@ -248,7 +249,7 @@ int lottery_algorithm(){
 		return OK;
 	}
 
-	printf("lottery_algorithm: selecting process %d to higher prio.\n", next_id);
+	printf("lottery_algorithm: selecting process %d to prio 14.\n", next_id);
 
 	// put the winners id to MAX Q
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
@@ -256,7 +257,7 @@ int lottery_algorithm(){
                 && rmp->id==next_id) {
             rmp->priority = MAX_USER_Q;
             schedule_process_local(rmp);
-            break;
+            break;higher
         }
     }
     return OK;
@@ -569,6 +570,7 @@ void init_scheduling(void)
  */
 static void balance_queues(struct timer *tp)
 {
+	printf("balance_queues: starting\n");
 	struct schedproc *rmp;
 	int proc_nr;
 
@@ -582,14 +584,14 @@ static void balance_queues(struct timer *tp)
 	// }
 
 	// 577 edit start
-	// for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-	// 	if (rmp->flags & IN_USE) {
-	// 		if (rmp->priority > rmp->max_priority) {
-	// 			rmp->priority -= 0; /* no tamper priority */
-	// 			schedule_process_local(rmp);
-	// 		}
-	// 	}
-	// }
+	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+		if (rmp->flags & IN_USE) {
+			if (rmp->priority > rmp->max_priority) {
+				rmp->priority -= 0; /* no tamper priority */
+				schedule_process_local(rmp);
+			}
+		}
+	}
 	// 577 edit end
 
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
