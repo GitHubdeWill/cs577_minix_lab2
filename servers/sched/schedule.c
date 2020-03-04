@@ -48,6 +48,12 @@ static void balance_queues(struct timer *tp);
 /* processes created by RS are sysytem processes */
 #define is_system_proc(p)	((p)->parent == RS_PROC_NR)
 
+#define FCFS_SCHED 377
+#define RAND_SCHED 577
+#define LOTT_SCHED 677
+
+static unsigned scheduler_algo = RAND_SCHED;  // Default random scheduler
+
 static unsigned cpu_proc[CONFIG_MAX_CPUS];
 
 static void pick_cpu(struct schedproc * proc)
@@ -86,9 +92,19 @@ static void pick_cpu(struct schedproc * proc)
 }
 
 /*===========================================================================*
-*				577 Edit id counter for processes				     *
+*				577 Edit utils				     *
 *===========================================================================*/
 unsigned idcounter = 0;  // id for processes to indicate who came in first
+int is_premeptive(){
+	/**
+	 * @brief  if the scheduler is premeptive
+	 * @note   
+	 * @retval 1 if is
+	 */
+	if (scheduler_algo == LOTT_SCHED) return TRUE;
+	if (scheduler_algo == FCFS_SCHED || scheduler_algo == RAND_SCHED) return FALSE;
+	return -1;
+}
 
 
 /*===========================================================================*
@@ -135,11 +151,8 @@ int random_algorithm(){
      * @retval Status of operation
      */
 	// printf("random_algorithm: starting\n");
-	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
-    // int all_procs[NR_PROCS];  // Stores all process ids for later random
-	// int array_end = 0;  // The end index of array
 	int process_count = 0;
 
 	// Add all process ids to array
@@ -157,7 +170,6 @@ int random_algorithm(){
 		return OK;
 	}
 
-	// int next_id = all_procs[random()%array_end];
 	// if (next == 1) {
 	// 	int seed = time(NULL);
 	// 	printf("random_algorithm: seeding with %d.\n", seed);
@@ -175,7 +187,6 @@ int random_algorithm(){
         if ((rmp->flags & IN_USE) && rmp->priority == MIN_USER_Q) {
 			if (process_idx == process_to_raise) {
 				int procid = rmp->id;
-				printf("random_algorithm: raise: %d\n", procid);
 				rmp->priority = MAX_USER_Q;
 				schedule_process_local(rmp);
 				break;
@@ -197,7 +208,6 @@ int lottery_algorithm(){
      * @retval Status of operation
      */
 	// printf("lottery_algorithm: starting.\n");
-	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
 	int total_tickets = 0;  // Holds the total amount of tickets of all processes
@@ -205,7 +215,7 @@ int lottery_algorithm(){
 	// Get total amount of tickets
     for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
         if ((rmp->flags & IN_USE)
-                && rmp->priority == MIN_USER_Q) {
+                && rmp->priority == MIN_USER_Q) {if (scheduler_algo == LOTT_SCHED)
             total_tickets += rmp->tickets;
         }
     }
@@ -287,32 +297,26 @@ int do_noquantum(message *m_ptr)
 	// }
 
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
+
 	// if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
 	// 	printf("do_noquantum: high priority proc, continue");
 	// 	rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
 	// 	schedule_process_local(rmp);  // Continue to run it; not continue for lottery
 	// 	return OK;
 	// }
+	if (is_premeptive() == FALSE){
+		printf("do_noquantum: using non-premeptive scheduler. no other process should run before this process is finished.\n");
+		rmp->priority = MAX_USER_Q;
+		schedule_process_local(rmp);  // Continue to run it
+	} else if (is_premeptive() == TRUE) {
+		// reset process queue
+		rmp->priority= MIN_USER_Q;
+
+		if (scheduler_algo == FCFS_SCHED) fcfs_algorithm();
+		else if (scheduler_algo == RAND_SCHED) random_algorithm();
+		else if (scheduler_algo == LOTT_SCHED) lottery_algorithm();
+	}
 	
-	printf("do_noquantum: no other process should run before this process is finished.\n");
-	rmp->priority = MAX_USER_Q;
-	schedule_process_local(rmp);  // Continue to run it
-	///
-		// Premeptive should schedule new
-	///
-	// if((rv = schedule_process_local(rmp)) != OK) {
-	// 	printf("do_noquantum: schedule rmp not OK.\n");
-	// 	return rv;
-	// }
-
-	// // reset process queue
-	// rmp->priority= MIN_USER_Q;
-	// schedule_process_local(rmp);
-
-	// // fcfs_algorithm();
-	// random_algorithm();
-	// // lottery_algorithm();
-	// // 577 edit done
 	return OK;
 }
 
@@ -343,9 +347,9 @@ int do_stop_scheduling(message *m_ptr)
 
 	//577 edit start
 	// When a process stopped, we want to schedule another one
-	// fcfs_algorithm();
-	random_algorithm();
-	// lottery_algorithm();
+	if (scheduler_algo == FCFS_SCHED) fcfs_algorithm();
+	else if (scheduler_algo == RAND_SCHED) random_algorithm();
+	else if (scheduler_algo == LOTT_SCHED) lottery_algorithm();
 	//577 edit end
 	return OK;
 }
