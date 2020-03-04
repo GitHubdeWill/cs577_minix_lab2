@@ -1,0 +1,1 @@
+make build MKUPDATE=yes; cd releasetools; make services; make hdboot

@@ -209,8 +209,6 @@ int lottery_algorithm(){
 	// srandom(seed);
     struct schedproc *rmp;
     int proc_nr;
-    int all_procs[NR_PROCS];  // Stores all process id for later random
-	int array_end = 0;  // The end index of array
 	int total_tickets = 0;  // Holds the total amount of tickets of all processes
 
 	// Get total amount of tickets
@@ -223,16 +221,13 @@ int lottery_algorithm(){
 
 	if (total_tickets < 1) return OK;  // When there is no ticket
 
-	// int next_id = all_procs[random()%array_end];
-
 	// if (next == 1) {
 	// 	int seed = time(NULL);
 	// 	printf("lottery_algorithm: seeding with %d.\n", seed);
 	// 	srando(seed);
 	// }
 
-	int rando_nr = rando();
-	int ticket_c = rando_nr%total_tickets;
+	int ticket_c = random() % total_tickets;
 	// printf("lottery_algorithm: By %d,  %d / %d ticket is selected.\n", rando_nr, ticket_c, total_tickets);
 	
 	int next_id = -1;
