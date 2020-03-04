@@ -11,6 +11,7 @@
 #include "schedproc.h"
 #include <assert.h>
 #include <minix/com.h>
+#include <minix/ipc.h>
 #include <machine/archtypes.h>
 #include "kernel/proc.h" /* for queue constants */
 #include <stdlib.h>  // For Random function
@@ -605,4 +606,41 @@ static void balance_queues(struct timer *tp)
 	// 577 edit end
 
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
+}
+
+
+/*===========================================================================*
+ *				system call set sched			     *
+ *===========================================================================*/
+
+int do_set_sched(message *m_ptr) {
+	struct schedproc *rmp;
+    int proc_nr;
+
+	int target_pid = m_ptr->m_u.m_m2.m2i1;
+	int target_ticket = m_ptr->m_u.m_m2.m2i2;
+	int target_sched_type = m_ptr->m_u.m_m2.m2i3;
+
+	long ret = 0;
+
+	if (target_sched_type == FCFS_SCHED) {
+		scheduler_algo = FCFS_SCHED;
+		ret += 1;
+	} else if (target_sched_type == RAND_SCHED) {
+		scheduler_algo = RAND_SCHED;
+		ret += 2;
+	} else if (target_sched_type == LOTT_SCHED) {
+		scheduler_algo = LOTT_SCHED;
+		ret += 4;
+		// Loop through all process in process array and get set id with ticket
+		for (proc_nr = 0, rmp = schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+			if ((rmp->flags & IN_USE)
+					&& rmp->priority >= MAX_USER_Q && rmp->id == target_pid) {
+				rmp->tickets = target_ticket;
+				ret += 8;
+			}
+		}
+	}
+	m_ptr->m_u.m_m2.m2l1 = ret;
+	return OK;
 }

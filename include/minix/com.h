@@ -1163,6 +1163,10 @@
 /* SCHEDULING_INHERIT is like SCHEDULING_START, but without _QUANTUM field */
 #define SCHEDULING_INHERIT	(SCHEDULING_BASE+5)
 
+
+// Call number for scheduler
+#define SCHEDSET		(SCHEDULING_BASE+6)
+
 /*===========================================================================*
  *              Messages for USB                                             *
  *===========================================================================*/

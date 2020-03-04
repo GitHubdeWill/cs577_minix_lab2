@@ -92,6 +92,9 @@ int main(void)
 				result = EPERM;
 			}
 			break;
+		case SCHEDSET:
+			result = do_set_sched(&m_in);
+			break;
 		default:
 			result = no_sys(who_e, call_nr);
 		}
