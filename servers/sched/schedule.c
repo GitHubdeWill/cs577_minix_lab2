@@ -614,6 +614,11 @@ static void balance_queues(struct timer *tp)
  *===========================================================================*/
 
 int do_set_sched(message *m_ptr) {
+	/**
+	 * @brief  Set scheduler type, lottery tickets given pid
+	 * @note  m2l1 will have: 1 for fcfs; 2 for random; 12 for lottery and setting ticket
+	 * @retval operation status
+	 */
 	struct schedproc *rmp;
     int proc_nr;
 
