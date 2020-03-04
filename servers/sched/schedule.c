@@ -298,8 +298,8 @@ int do_noquantum(message *m_ptr)
 	printf("do_noquantum: Process %d finished Q and was in queue %d.\n", rmp->id,rmp->priority);
 	if (rmp->priority < MIN_USER_Q) {  // If the priority is higher than 15
 		rmp->priority += 0; /* not lower priority for non preemtive 577 edit*/
-		schedule_process_local(rmp);  // Continue to run it
-		return OK;
+		// schedule_process_local(rmp);  // Continue to run it; not continue for lottery
+		// return OK;
 	}
 
 	if((rv = schedule_process_local(rmp)) != OK) {
@@ -313,7 +313,8 @@ int do_noquantum(message *m_ptr)
 	schedule_process_local(rmp);
 
 	// fcfs_algorithm();
-	random_algorithm();
+	// random_algorithm();
+	lottery_algorithm();
 	// 577 edit done
 	return OK;
 }
@@ -346,7 +347,8 @@ int do_stop_scheduling(message *m_ptr)
 	//577 edit start
 	// When a process stopped, we want to schedule another one
 	// fcfs_algorithm();
-	random_algorithm();
+	// random_algorithm();
+	lottery_algorithm();
 	//577 edit end
 	return OK;
 }
@@ -385,7 +387,7 @@ int do_start_scheduling(message *m_ptr)
 	// 577 edit start
 	rmp->id = ++idcounter;
 	rmp->tickets = 2;  // All process have 2 tickets at start
-	printf("do_start_scheduling: starting scheduling for process %d.\n", rmp->id);
+	// printf("do_start_scheduling: starting scheduling for process %d.\n", rmp->id);
 	// 577 edit end
 
 	/* Inherit current priority and time slice from parent. Since there
