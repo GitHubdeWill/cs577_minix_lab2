@@ -52,7 +52,8 @@ static void balance_queues(struct timer *tp);
 #define RAND_SCHED 577
 #define LOTT_SCHED 677
 
-static unsigned scheduler_algo = RAND_SCHED;  // Default random scheduler
+// static unsigned scheduler_algo = RAND_SCHED;  // Default random scheduler
+static unsigned scheduler_algo = LOTT_SCHED;  // Default lottery scheduler
 
 static unsigned cpu_proc[CONFIG_MAX_CPUS];
 
@@ -309,6 +310,7 @@ int do_noquantum(message *m_ptr)
 		rmp->priority = MAX_USER_Q;
 		schedule_process_local(rmp);  // Continue to run it
 	} else if (is_premeptive() == TRUE) {
+		printf("do_noquantum: using premeptive scheduler. scheduling a new one!\n");
 		// reset process queue
 		rmp->priority= MIN_USER_Q;
 
